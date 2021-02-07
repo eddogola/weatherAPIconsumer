@@ -52,30 +52,32 @@ func generateURL() string {
 	return req.URL.String()
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func getDataFromEndpoint() (hours []Weather, err error) {
 	url := generateURL()
-
 	resp, err := http.Get(url)
-
 	check(err)
-
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		b, err := ioutil.ReadAll(resp.Body)
-		
-		check(err)
-
-		var hours []Weather
+		b, err2 := ioutil.ReadAll(resp.Body)
+		check(err2)
 
 		json.Unmarshal(b, &hours)
-	
-		w.Header().Set("Content-Type", "text/html")
-		for _, h := range hours {
-			fmt.Fprintf(w, "<li>%s - %.2f %s</li>", h.IconPhrase, h.Temperature.Value, h.Temperature.Unit)
-		}
+
+		return
 	} else {
-		fmt.Println(fmt.Errorf("failed to get url, %v", url))
+		err = fmt.Errorf("failed to get url, %v", url)
+		return
+	}
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	hours, err := getDataFromEndpoint()
+	check(err)
+
+	w.Header().Set("Content-Type", "text/html")
+	for _, h := range hours {
+		fmt.Fprintf(w, "<li>%s - %.2f %s</li>", h.IconPhrase, h.Temperature.Value, h.Temperature.Unit)
 	}
 }
 
